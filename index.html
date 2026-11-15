@@ -13,6 +13,17 @@
     canvas {
       display: block;
     }
+    #ui {
+      position: fixed; top: 10px; left: 10px; z-index: 5;
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      font-family: "BIZ UDPGothic", sans-serif; color: #fff;
+    }
+    #ui select, #ui button {
+      font: inherit; font-size: 16px; min-height: 44px; padding: 0 12px;
+      border-radius: 10px; border: 0; background: #fff; color: #333;
+    }
+    #ui .sw { width: 44px; padding: 0; border: 3px solid #fff; }
+    #ui .sw.on { border-color: #ff7a9c; }
   </style>
 
   <!-- 1. Three.js 本体 (r128系) の読み込み -->
@@ -23,9 +34,12 @@
 
   <!-- 3. 作成したモデルJSファイルを読み込み -->
   <script src="./piyo.js"></script>
-  <!-- ※ パンダやイヌネコを表示したい時は上の行を panda.js や dogcat.js に変えるだけ！ -->
+  <script src="./panda.js"></script>
+  <script src="./newchars.js"></script>
+  <!-- ※ dogcat.js は ES Module 形式なので、この画面では読み込んでいません -->
 </head>
 <body>
+  <div id="ui"></div>
   <script>
     // --------------------------------------------------
     // シーン・カメラ・レンダラーの設定
@@ -61,13 +75,56 @@
     // --------------------------------------------------
     // モデルの呼び出しと配置
     // --------------------------------------------------
-    // piyo.js の中で定義されている createChick() を実行！
-    if (typeof createChick === 'function') {
-      const chick = createChick();
-      scene.add(chick);
-    } else {
-      console.error("createChick 関数が見つかりません。piyo.js の読み込みを確認してください。");
+    // r128 には CapsuleGeometry が無く、パンダ（panda.js）が動かないので、無いときだけ代わりを用意する
+    if (!THREE.CapsuleGeometry) {
+      THREE.CapsuleGeometry = function (radius, length, capSeg, radialSeg) {
+        const pts = [], n = (capSeg || 4) * 2;
+        for (let i = 0; i <= n; i++) {
+          const a = (i / n) * Math.PI;                     // 0(上) → π(下)
+          const top = a <= Math.PI / 2;
+          pts.push(new THREE.Vector2(Math.sin(a) * radius, Math.cos(a) * radius + (top ? length / 2 : -length / 2)));
+        }
+        return new THREE.LatheGeometry(pts, radialSeg || 12);
+      };
     }
+
+    // 表示するキャラの一覧（ひよこ・パンダ＋新キャラ11種）
+    // 新キャラは newchars.js の NEW_CHARS / NEW_PALETTES から読み込みます
+    const LIST = [
+      { key: 'chick', name: 'ひよこ', make: () => createChick(), scale: 1.0, fixedColor: true },
+      { key: 'panda', name: 'パンダ', make: () => makePanda({}), scale: 1.0, fixedColor: true },
+    ];
+    if (window.NEW_CHARS) {
+      for (const k in NEW_CHARS) LIST.push({ key: k, name: NEW_CHARS[k].name, make: (pal) => NEW_CHARS[k].create(pal), scale: 1.7, fixedColor: false });
+    }
+    const PAL_KEYS = window.NEW_PALETTES ? Object.keys(NEW_PALETTES) : [];
+
+    let current = null, curDef = LIST[0], curPal = PAL_KEYS[0];
+    function show() {
+      if (current) scene.remove(current);
+      current = curDef.make(curDef.fixedColor ? undefined : NEW_PALETTES[curPal]);
+      current.scale.setScalar(curDef.scale);
+      scene.add(current);
+      document.querySelectorAll('#ui .sw').forEach(b => {
+        b.classList.toggle('on', b.dataset.k === curPal);
+        b.style.opacity = curDef.fixedColor ? 0.3 : 1;
+      });
+    }
+
+    const ui = document.getElementById('ui');
+    const sel = document.createElement('select');
+    LIST.forEach((d, i) => { const o = document.createElement('option'); o.value = i; o.textContent = d.name; sel.appendChild(o); });
+    sel.addEventListener('change', () => { curDef = LIST[+sel.value]; show(); });
+    ui.appendChild(sel);
+    PAL_KEYS.forEach(k => {
+      const b = document.createElement('button');
+      b.className = 'sw'; b.dataset.k = k; b.title = k;
+      b.style.background = '#' + NEW_PALETTES[k].main.toString(16).padStart(6, '0');
+      b.addEventListener('click', () => { curPal = k; show(); });
+      ui.appendChild(b);
+    });
+    controls.target.set(0, 0.9, 0);
+    show();
 
     // 床の目安（グリッド線）
     const gridHelper = new THREE.GridHelper(10, 10);
