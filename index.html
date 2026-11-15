@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>3D Model Preview</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <style>
     body {
       margin: 0;
@@ -33,11 +36,13 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
   <!-- 3. 作成したモデルJSファイルを読み込み -->
-  <script src="./newchars.js"></script>
+  <script src="./newchars.js?v=20261115b"></script>
   <!-- ※ ひよこ・パンダ・いぬロボ・ネコも newchars.js に入っています（色違い対応版）。piyo.js / panda.js / dogcat.js は元のままの単体ファイルです -->
 </head>
 <body>
+  <!-- build: 2026-11-15b -->
   <div id="ui"></div>
+  <div style="position:fixed;right:8px;bottom:6px;font:11px sans-serif;color:#667;z-index:5">v2026-11-15b</div>
   <script>
     // --------------------------------------------------
     // シーン・カメラ・レンダラーの設定
