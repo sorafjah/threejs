@@ -1,4 +1,5 @@
-// ===================== 新キャラ11種（Three.js）単体抜き出し版 =====================
+// ===================== キャラ15種（Three.js）単体抜き出し版 =====================
+// （新キャラ11種＋ひよこ・パンダ・いぬロボ・ネコ。4体は色違いにも対応）
 // 元プロジェクト：クレーンゲーム（sorafjah.github.io/crane-game）
 // 依存：three.js（グローバル版。r128 でも r169 でも動く。`THREE.xxx` で参照する形式）
 //
@@ -9,7 +10,8 @@
 //   scene.add(bear);
 //
 // まとめて使うとき：
-//   NEW_CHARS = { ball:{name:'まんまる', create:fn}, egg:..., ... }（全部 create(pal) の形）
+//   NEW_CHARS = { chick:{name:'ひよこ', create:fn, orig:true}, ball:{...}, ... }（全部 create(pal) の形）
+//   orig:true の4体（ひよこ・パンダ・いぬロボ・ネコ）は create() で元の色、create(pal) で色違い
 //   NEW_PALETTES = { pink, sky, mint, cream, lav, peach }（それぞれ {main, deep, light}）
 //
 // どれも足元（y=0）が地面の基準で、顔は +Z 方向を向いています。
@@ -216,8 +218,125 @@ function makeCube(pal) {
   return g;
 }
 
+  // ---- もとからいたキャラ（色を変えられる形に直したもの。pal を渡さないと元の色）----
+function makeChick(pal) {
+  const g = new THREE.Group(); const o = { roughness: 0.65, metalness: 0.05 };
+  const mb = mat(pal ? pal.main : 0xf6c143, o), mw = mat(pal ? pal.deep : 0xf6d743, o);
+  const me = mat(0x1a1a1a, o), mo = mat(0xf5941f, o), mf = mat(0xf58d1f, o), mbr = mat(0x73450c, o);
+  const mc = mat(pal ? (pal.key === 'pink' ? 0xffd34d : 0xff8fb8) : 0xff50a0, o);
+  put(g, sph(0.55, mb, 20, 16), [0, 0.75, 0]);
+  put(g, sph(0.4, mb, 20, 16), [0, 1.35, 0.08]);
+  put(g, sph(0.055, me, 12, 10), [-0.15, 1.42, 0.42]);
+  put(g, sph(0.055, me, 12, 10), [0.15, 1.42, 0.42]);
+  put(g, new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 12), mo), [0, 1.32, 0.46], [1.855, 0, 0]);
+  put(g, sph(0.3, mw, 14, 12), [-0.5009, 0.85, -0.02], [0.0015, -1.0488, 2.5957], [0.6, 1, 0.35]);
+  put(g, sph(0.3, mw, 14, 12), [0.4943, 0.85, -0.02], [0, 0.9291, -2.548], [0.6, 1, 0.35]);
+  put(g, sph(0.13, mw, 12, 10), [-0.0234, 0.4687, -0.3805], [-0.395, 0, 0], [1.4271, 0.4141, 1.7247]);
+  put(g, box(0.2, 0.07, 0.3, mf), [-0.2, 0.2466, -0.0101], [0.1538, 0, 0]);
+  put(g, box(0.2, 0.07, 0.3, mf), [0.2, 0.2519, 0.1199], [-0.0892, 0.0042, -0.003]);
+  put(g, sph(0.13, mc, 12, 10), [-0.0018, 1.6976, -0.0885], [-0.4677, -0.0089, -0.0261], [0.6296, 0.9351, 1.1887]);
+  put(g, sph(0.5, mbr, 16, 12), [-0.1751, 1.5292, 0.3926], [-0.2561, -0.3673, 0.0369], [0.1732, 0.0414, 0.0454]);
+  put(g, sph(0.5, mbr, 16, 12), [0.1637, 1.5292, 0.4063], [-0.2357, 0.3022, -0.1098], [0.1732, 0.039, 0.0454]);
+  return g;
+}
+function makePanda(pal) {
+  const model = new THREE.Group();
+  const white = mat(0xfaf7f2, { roughness: 0.85 });
+  const black = mat(pal ? pal.deep : 0x33333a, { roughness: 0.65 });
+  const pink = mat(0xff9fb6, { roughness: 0.9, transparent: true, opacity: 0.9 });
+  const dark = mat(0x1c1c22, { roughness: 0.5 });
+  const white2 = mat(0xffffff, { roughness: 0.35 });
+  const innerM = mat(pal ? pal.light : 0x5a5a63, { roughness: 0.8 });
+  put(model, sph(0.56, white, 24, 18), [0, 0.62, 0], null, [1.06, 1.0, 0.98]);
+  put(model, sph(0.1, white, 12, 10), [0, 0.5, -0.55]);
+  for (const sx of [-1, 1]) {
+    const leg = new THREE.Group(); leg.position.set(sx * 0.24, 0.3, 0.04);
+    put(leg, capsule(0.13, 0.16, black), [0, -0.16, 0]);
+    put(leg, sph(0.14, black, 14, 12), [0, -0.3, 0.06], null, [1.1, 0.7, 1.25]);
+    model.add(leg);
+    const arm = new THREE.Group(); arm.position.set(sx * 0.5, 0.82, 0.06);
+    put(arm, capsule(0.11, 0.2, black), [0, -0.17, 0]);
+    put(arm, sph(0.13, black, 14, 12), [0, -0.34, 0]);
+    model.add(arm);
+  }
+  const head = new THREE.Group(); head.position.set(0, 1.3, 0.06); model.add(head);
+  head.add(sph(0.45, white, 24, 18));
+  for (const sx of [-1, 1]) {
+    const ear = new THREE.Group(); ear.position.set(sx * 0.3, 0.3, -0.02);
+    put(ear, sph(0.17, black, 18, 16), [0, 0.06, 0], null, [1, 1.05, 0.62]);
+    put(ear, sph(0.09, innerM, 14, 12), [0, 0.06, 0.06], null, [1, 1, 0.4]);
+    head.add(ear);
+    put(head, sph(0.15, black, 18, 16), [sx * 0.17, 0.03, 0.36], [-0.15, 0, sx * 0.5], [0.8, 1.2, 0.42]);
+    const eye = new THREE.Group(); eye.position.set(sx * 0.17, 0.05, 0.395);
+    put(eye, sph(0.08, white2, 16, 14), null, null, [1, 1, 0.5]);
+    put(eye, sph(0.047, dark, 14, 12), [0, 0, 0.022], null, [1, 1, 0.55]);
+    put(eye, new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })), [sx * 0.016 + 0.012, 0.016, 0.045]);
+    head.add(eye);
+    put(head, sph(0.085, pink, 14, 12), [sx * 0.3, -0.08, 0.33], null, [1, 0.72, 0.35]);
+  }
+  put(head, sph(0.06, dark, 14, 12), [0, -0.06, 0.44], null, [1.5, 1.0, 0.9]);
+  put(head, sph(0.05, mat(0x7a3a45, { roughness: 0.6 }), 14, 12), [0, -0.17, 0.42], null, [1.3, 0.5, 0.6]);
+  return model;
+}
+// ※ 環境マップが無い画面でも暗くならないよう、金属感（metalness）をおさえてあります
+  function makeDog(pal) {
+  const rig = new THREE.Group();
+  const dogBody = mat(pal ? pal.light : 0xf7f2e6, { metalness: 0.05, roughness: 0.5 });
+  const dogAcc = mat(pal ? pal.deep : 0x62b0e8, { metalness: 0.15, roughness: 0.4 });
+  const dogDark = mat(0x2e3338, { metalness: 0.1, roughness: 0.55 });
+  put(rig, box(0.85, 0.58, 1.45, dogBody), [0, 0.56, 0]);
+  const hg = new THREE.Group(); hg.position.set(0, 0.88, 0.8); rig.add(hg);
+  hg.add(box(0.66, 0.58, 0.62, dogBody));
+  put(hg, box(0.38, 0.27, 0.36, mat(0xffe0b0, { roughness: 0.6 })), [0, -0.14, 0.42]);
+  put(hg, box(0.34, 0.1, 0.32, mat(0xf0c898, { roughness: 0.6 })), [0, -0.26, 0.42]);
+  put(hg, sph(0.065, dogDark, 8, 8), [0, -0.08, 0.61]);
+  for (const x of [-0.19, 0.19]) put(hg, sph(0.07, dogDark, 10, 10), [x, 0.06, 0.3]);
+  for (const x of [-0.24, 0.24]) {
+    const pv = new THREE.Group(); pv.position.set(x, 0.28, -0.02);
+    put(pv, new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.36, 8), dogAcc), [0, 0.18, 0]);
+    hg.add(pv);
+  }
+  for (const [x, z] of [[-0.32, -0.5], [0.32, -0.5], [-0.32, 0.5], [0.32, 0.5]]) put(rig, box(0.2, 0.48, 0.2, dogDark), [x, 0.26, z]);
+  const tp = new THREE.Group();
+  put(tp, new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.045, 0.55, 8), dogBody), [0, 0.28, 0]);
+  put(tp, sph(0.085, dogAcc, 8, 8), [0, 0.56, 0]);
+  tp.position.set(0, 0.72, -0.72); tp.rotation.x = -0.55; rig.add(tp);
+  return rig;
+}
+function makeCat(pal) {
+  const rig = new THREE.Group();
+  const fur = mat(pal ? pal.main : 0x8c8f98, { roughness: 0.85 });
+  const belly = mat(0xe6e2da, { roughness: 0.9 });
+  const dark = mat(0x35322f, { roughness: 0.7 });
+  put(rig, sph(0.46, fur, 16, 14), [0, 0.44, 0], null, [1.0, 0.86, 1.18]);
+  put(rig, sph(0.33, belly, 12, 10), [0, 0.30, 0.10], null, [1.0, 0.7, 1.1]);
+  const head = new THREE.Group(); head.position.set(0, 0.78, 0.34); rig.add(head);
+  put(head, sph(0.30, fur, 16, 14), null, null, [1.05, 0.95, 0.95]);
+  put(head, sph(0.15, belly, 12, 10), [0, -0.09, 0.22], null, [1.1, 0.72, 0.8]);
+  put(head, new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.05, 6), mat(0xe89aa8)), [0, -0.05, 0.33], [Math.PI / 2, 0, 0]);
+  for (const x of [-0.16, 0.16]) {
+    const p = new THREE.Group(); p.position.set(x, 0.22, 0.02);
+    put(p, new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.20, 4), fur), [0, 0.10, 0]); head.add(p);
+  }
+  for (const x of [-0.13, 0.13]) {
+    put(head, sph(0.055, mat(0x9fd86a, { emissive: 0x2a4a18 }), 10, 10), [x, 0.03, 0.245]);
+    put(head, box(0.012, 0.07, 0.01, dark), [x, 0.03, 0.30]);
+  }
+  for (const [x, z] of [[-0.24, -0.28], [0.24, -0.28], [-0.24, 0.28], [0.24, 0.28]])
+    put(rig, new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.10, 0.26, 8), fur), [x, 0.09, z]);
+  const tail = new THREE.Group();
+  put(tail, new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.035, 0.62, 8), fur), [0, 0.31, 0]);
+  put(tail, sph(0.055, belly, 8, 8), [0, 0.62, 0]);
+  tail.position.set(0, 0.50, -0.46); tail.rotation.x = -0.9; rig.add(tail);
+  return rig;
+}
+
   // ---- 外に出す ----
   const NEW_CHARS = {
+    chick:   { name: 'ひよこ',     create: makeChick, orig: true },
+    panda:   { name: 'パンダ',     create: makePanda, orig: true },
+    dog:     { name: 'いぬロボ',   create: makeDog,   orig: true },
+    cat:     { name: 'ネコ',       create: makeCat,   orig: true },
     ball:    { name: 'まんまる',   create: makeBall },
     egg:     { name: 'たまご',     create: makeEgg },
     gourd:   { name: 'ひょうたん', create: makeGourd },
@@ -230,10 +349,11 @@ function makeCube(pal) {
     penguin: { name: 'ペンギン',   create: makePenguin },
     donut:   { name: 'ドーナツ',   create: makeDonut },
   };
+  // 新キャラは pal を省くとピンク。もとからいたキャラ（orig:true）は pal を省くと元の色
   const withPal = (f) => (pal) => f(pal || NEW_PALETTES.pink);
   window.NEW_PALETTES = NEW_PALETTES;
   window.NEW_CHARS = NEW_CHARS;
-  for (const k in NEW_CHARS) NEW_CHARS[k].create = withPal(NEW_CHARS[k].create);
+  for (const k in NEW_CHARS) if (!NEW_CHARS[k].orig) NEW_CHARS[k].create = withPal(NEW_CHARS[k].create);
   window.createBall = NEW_CHARS.ball.create;       window.createEgg = NEW_CHARS.egg.create;
   window.createGourd = NEW_CHARS.gourd.create;     window.createWorm = NEW_CHARS.worm.create;
   window.createCube = NEW_CHARS.cube.create;       window.createRabbit = NEW_CHARS.rabbit.create;
